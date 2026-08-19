@@ -1,0 +1,140 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1380" viewBox="0 0 1600 1380">
+<style>
+text { font-family: Arial, Helvetica, sans-serif; fill:#111827; }
+.title { font-size:34px; font-weight:700; }
+.subtitle { font-size:18px; fill:#4b5563; }
+.section { font-size:20px; font-weight:700; fill:#374151; }
+.node-title { font-size:20px; font-weight:700; }
+.node-text { font-size:15px; fill:#374151; }
+.small { font-size:14px; fill:#4b5563; }
+.box { fill:#ffffff; stroke:#4b5563; stroke-width:2; rx:14; }
+.core { fill:#f8fafc; stroke:#374151; stroke-width:2; rx:14; }
+.arrow { stroke:#374151; stroke-width:2.5; fill:none; marker-end:url(#arrow); }
+.dashed { stroke-dasharray:8 7; }
+.label { font-size:14px; fill:#374151; font-weight:600; }
+</style>
+<defs>
+ <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+  <path d="M0,0 L0,6 L9,3 z" fill="#374151"/>
+ </marker>
+</defs>
+
+<text x="80" y="65" class="title">PlatformAI — Domain Architecture v0.1</text>
+<text x="80" y="98" class="subtitle">Domain responsibilities and relationships; implementation technologies remain replaceable.</text>
+
+<text x="80" y="150" class="section">Experience, Identity &amp; Authorization</text>
+
+<rect x="80" y="180" width="300" height="120" class="box"/>
+<text x="105" y="218" class="node-title">Users / Personas</text>
+<text x="105" y="248" class="node-text">Platform Engineer • Developer</text>
+<text x="105" y="272" class="node-text">Customer Success • Security • Data</text>
+
+<rect x="510" y="180" width="300" height="120" class="box"/>
+<text x="535" y="218" class="node-title">Identity Provider</text>
+<text x="535" y="248" class="node-text">Authentication</text>
+<text x="535" y="272" class="node-text">Groups • Claims • Identity</text>
+
+<rect x="940" y="180" width="420" height="120" class="box"/>
+<text x="965" y="218" class="node-title">Authorization Engine</text>
+<text x="965" y="248" class="node-text">Roles • Permissions • Resource scope • Policies</text>
+<text x="965" y="272" class="node-text">Subject + Action + Resource + Context</text>
+
+<path d="M380 240 L510 240" class="arrow"/>
+<path d="M810 240 L940 240" class="arrow"/>
+
+<rect x="555" y="350" width="490" height="125" class="box"/>
+<text x="580" y="390" class="node-title">Service Marketplace</text>
+<text x="580" y="420" class="node-text">Permission-aware self-service experience</text>
+<text x="580" y="446" class="node-text">Displays only services/actions available to the current user</text>
+
+<path d="M1150 300 C1150 330,1000 340,1000 350" class="arrow"/>
+<text x="1030" y="330" class="label">available capabilities</text>
+
+<text x="80" y="535" class="section">Catalog Domains</text>
+
+<rect x="190" y="570" width="500" height="190" class="box"/>
+<text x="215" y="610" class="node-title">Service Catalog</text>
+<text x="215" y="638" class="node-text">Defines reusable platform services:</text>
+<text x="230" y="668" class="node-text">• Install Product</text>
+<text x="230" y="694" class="node-text">• Provision Customer Environment</text>
+<text x="230" y="720" class="node-text">• Provision Cluster • Troubleshoot Kubernetes</text>
+<text x="215" y="746" class="small">Services describe workflows, inputs, ownership and approvals.</text>
+
+<rect x="910" y="570" width="500" height="190" class="box"/>
+<text x="935" y="610" class="node-title">Product Catalog</text>
+<text x="935" y="638" class="node-text">Defines deployable products and compositions:</text>
+<text x="950" y="668" class="node-text">• Product Definitions • Versions • Dependencies</text>
+<text x="950" y="694" class="node-text">• Components • Ownership • Constraints</text>
+<text x="950" y="720" class="node-text">• Product Bundles / Solution Definitions</text>
+<text x="935" y="746" class="small">A service can target one, many, bundled, or no products.</text>
+
+<path d="M690 665 C760 630,840 630,910 665" class="arrow dashed"/>
+<path d="M910 705 C840 740,760 740,690 705" class="arrow dashed"/>
+<text x="735" y="620" class="label">many-to-many</text>
+
+<path d="M800 475 L440 570" class="arrow"/>
+<path d="M800 475 L1160 570" class="arrow"/>
+<text x="590" y="525" class="label">discover services</text>
+<text x="980" y="525" class="label">select product(s)</text>
+
+<rect x="520" y="825" width="560" height="120" class="core"/>
+<text x="545" y="866" class="node-title">Service Orchestrator</text>
+<text x="545" y="896" class="node-text">Turns an authorized service request into coordinated execution intent</text>
+<text x="545" y="922" class="node-text">Composes the reusable engines required by the requested service</text>
+
+<path d="M440 760 C440 800,650 800,650 825" class="arrow"/>
+<path d="M1160 760 C1160 800,950 800,950 825" class="arrow"/>
+
+<text x="80" y="1000" class="section">Reusable Platform Engines</text>
+
+<rect x="80" y="1030" width="220" height="110" class="core"/>
+<text x="100" y="1065" class="node-title">Workflow</text>
+<text x="100" y="1093" class="node-text">Steps, state, retries,</text>
+<text x="100" y="1117" class="node-text">approvals</text>
+
+<rect x="330" y="1030" width="220" height="110" class="core"/>
+<text x="350" y="1065" class="node-title">Lifecycle</text>
+<text x="350" y="1093" class="node-text">Install, upgrade, rollback,</text>
+<text x="350" y="1117" class="node-text">decommission</text>
+
+<rect x="580" y="1030" width="220" height="110" class="core"/>
+<text x="600" y="1065" class="node-title">AI Reasoning</text>
+<text x="600" y="1093" class="node-text">Investigation, reasoning,</text>
+<text x="600" y="1117" class="node-text">recommendations</text>
+
+<rect x="830" y="1030" width="220" height="110" class="core"/>
+<text x="850" y="1065" class="node-title">Knowledge</text>
+<text x="850" y="1093" class="node-text">RAG, docs, runbooks,</text>
+<text x="850" y="1117" class="node-text">ADRs, incidents</text>
+
+<rect x="1080" y="1030" width="220" height="110" class="core"/>
+<text x="1100" y="1065" class="node-title">Policy</text>
+<text x="1100" y="1093" class="node-text">Guardrails and</text>
+<text x="1100" y="1117" class="node-text">governance</text>
+
+<rect x="1330" y="1030" width="220" height="110" class="core"/>
+<text x="1350" y="1065" class="node-title">Observability</text>
+<text x="1350" y="1093" class="node-text">Logs, metrics, traces,</text>
+<text x="1350" y="1117" class="node-text">audit evidence</text>
+
+<path d="M800 945 L190 1030" class="arrow"/>
+<path d="M800 945 L440 1030" class="arrow"/>
+<path d="M800 945 L690 1030" class="arrow"/>
+<path d="M800 945 L940 1030" class="arrow"/>
+<path d="M800 945 L1190 1030" class="arrow"/>
+<path d="M800 945 L1440 1030" class="arrow"/>
+
+<text x="80" y="1205" class="section">Automation &amp; Execution Layer</text>
+<rect x="80" y="1235" width="1470" height="90" class="box"/>
+<text x="110" y="1270" class="node-title">Existing Engineering Systems</text>
+<text x="110" y="1301" class="node-text">Terraform • FluxCD / Fleet • Helm • Kubernetes • GitHub • Cloud APIs • Secrets / IAM • OpenTelemetry • MCP adapters</text>
+
+<path d="M190 1140 L300 1235" class="arrow"/>
+<path d="M440 1140 L520 1235" class="arrow"/>
+<path d="M690 1140 L740 1235" class="arrow"/>
+<path d="M940 1140 L960 1235" class="arrow"/>
+<path d="M1190 1140 L1180 1235" class="arrow"/>
+<path d="M1440 1140 L1400 1235" class="arrow"/>
+
+<text x="80" y="1360" class="small">Core principle: PlatformAI standardizes user intent and orchestrates trusted systems; it does not replace them.</text>
+</svg>
