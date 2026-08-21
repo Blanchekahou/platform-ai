@@ -1,598 +1,640 @@
 # PlatformAI Domain Architecture
 
+## Version
+
+**Domain Architecture v0.2**
+
+This revision evolves the initial PlatformAI domain model by introducing:
+
+- The Environment Domain
+- Environment Types, Profiles, Flavours, and Instances
+- Product Instances
+- Product Add-on Definitions
+- Customer Entitlement as an architectural concern
+- Atomic and Composite Services
+- A clearer separation between business-facing workflows and reusable engineering services
+
 ## Purpose
 
-This document describes the initial domain architecture of PlatformAI.
+This document describes the evolving domain architecture of PlatformAI.
 
-The goal is to define the major platform domains, their responsibilities, and the relationships between them before making implementation-specific decisions.
+The goal is to define the major platform domains, their responsibilities, and the relationships between them before implementation-specific decisions are introduced.
 
-This architecture is intentionally technology-agnostic at the domain level. Technologies such as Kubernetes, Terraform, FluxCD, Helm, MCP, RAG, and LLM frameworks are implementation mechanisms that support the domains described here.
-
-This document represents **Domain Architecture v0.1** and is expected to evolve as PlatformAI capabilities mature.
-
----
+This architecture remains technology-agnostic at the domain level. Technologies such as Kubernetes, Terraform, FluxCD, Fleet, Helm, MCP, RAG, and LLM frameworks are implementation mechanisms that support the domains described here.
 
 ## Architectural Context
 
 PlatformAI is an AI-enhanced Internal Developer Platform designed to provide a unified platform experience across existing engineering tools and workflows.
 
-The platform separates user experience, identity and authorization, catalogs, orchestration, reusable platform engines, and execution systems.
-
-A core architectural principle is:
+The platform separates user experience, identity and authorization, product definitions, environment definitions, service definitions, orchestration, reusable platform engines, and execution systems.
 
 > **PlatformAI augments and orchestrates existing engineering capabilities rather than replacing them.**
 
-Users interact with platform services rather than directly interacting with the underlying infrastructure tools required to fulfill those services.
-
----
-
-## Domain Architecture Diagram
-
-![PlatformAI Domain Architecture](../../diagrams/platformai-domain-architecture-v0.1.svg)
-
----
+Users express desired outcomes through platform services. PlatformAI translates those requests into governed, observable workflows executed through trusted engineering systems.
 
 ## Domain Model
 
-The PlatformAI domain model is organized into the following areas:
+PlatformAI v0.2 is organized around the following major domains:
 
 1. Identity
 2. Authorization
 3. Service Marketplace
-4. Service Catalog
-5. Product Catalog
-6. Service Orchestration
-7. Platform Engines
-8. Automation and Execution
+4. Service Domain
+5. Product Domain
+6. Environment Domain
+7. Customer Entitlement
+8. Service Orchestration
+9. Platform Engines
+10. Automation and Execution
 
-These domains have separate responsibilities and interact through well-defined boundaries.
+These domains have separate responsibilities and communicate through well-defined boundaries.
 
----
+# Identity Domain
 
-## Identity Domain
+## Responsibility
 
-### Responsibility
-
-The Identity domain determines who is interacting with PlatformAI.
+The Identity Domain determines who is interacting with PlatformAI.
 
 PlatformAI delegates authentication to an enterprise Identity Provider rather than implementing its own identity system.
 
-Identity information may include:
+Identity information may include user identity, groups, claims, and organizational attributes.
 
-- User identity
-- Groups
-- Claims
-- Organizational attributes
-
-### Example
-
-An organization may authenticate users through Okta using OIDC.
-
-PlatformAI consumes the resulting identity claims but does not manage user passwords.
-
-### Boundary
+## Boundary
 
 Identity answers:
 
 > **Who are you?**
 
-It does not determine what the user is allowed to do.
+It does not determine what the user is allowed to do. Authorization is handled separately.
 
-Authorization is handled separately.
+# Authorization Domain
 
----
+## Responsibility
 
-## Authorization Domain
+The Authorization Domain determines which actions a user is permitted to perform against platform resources.
 
-### Responsibility
+Authorization may consider identity groups, roles, permissions, resource scope, product, environment, service, and organizational policies.
 
-The Authorization domain determines which actions a user is permitted to perform against platform resources.
+## Personas Are Not Roles
 
-Authorization may consider:
+PlatformAI personas describe user archetypes and their goals. They are not authorization roles.
 
-- Identity groups
-- Roles
-- Permissions
-- Resource scope
-- Product
-- Service
-- Environment
-- Organizational policies
+A Software Developer persona may map to several roles with different permissions.
 
-### Personas Are Not Roles
-
-PlatformAI personas describe user archetypes and their goals.
-
-They are not authorization roles.
-
-A Software Developer persona, for example, may map to several roles with different permissions.
-
-One developer may only be allowed to view deployments while another may be able to deploy a specific application into a development environment.
-
-### Authorization Model
-
-The conceptual authorization request is:
+## Conceptual Authorization Request
 
 ```text
 Subject + Action + Resource + Context
 ```
 
-For example:
+## Boundary
 
-```text
-Developer A
-    +
-Deploy
-    +
-Product A
-    +
-Development Environment
-```
+Authorization determines what actions are permitted.
 
-The same user may not be authorized to deploy the same product to production.
+The user interface may hide unavailable actions for usability, but backend services must enforce authorization independently.
 
-### Boundary
+# Service Marketplace
 
-Authorization determines capabilities.
-
-The user interface does not provide security enforcement itself.
-
-Backend services must enforce the same authorization decisions.
-
----
-
-## Service Marketplace
-
-### Responsibility
+## Responsibility
 
 The Service Marketplace is the self-service experience through which users discover and consume PlatformAI services.
 
 The Marketplace is permission-aware.
 
-It displays only the services and actions that are available to the authenticated user.
+Business-facing personas may see outcome-oriented services such as:
 
-Examples may include:
+```text
+Onboard Customer
+Enable Contracted Add-on
+Track Environment Status
+```
 
-- Provision Customer Environment
-- Install Product
-- Provision Kubernetes Cluster
-- Request Database
-- Troubleshoot Kubernetes
-- Create Namespace
-- Request Certificate
+Engineering personas may also see lower-level reusable services such as:
 
-### Boundary
+```text
+Provision Environment
+Install Product
+Configure Network Access
+Enable Product Add-on
+Troubleshoot Kubernetes
+```
 
-The Marketplace does not own authorization rules.
+## Boundary
 
-It receives the capabilities available to the user and renders the corresponding platform experience.
+The Marketplace does not own authorization policy, product definitions, environment definitions, or service execution.
 
-The Marketplace also does not execute services directly.
+# Service Domain
 
-Execution is delegated to the Service Orchestrator.
+## Responsibility
 
----
+The Service Domain defines reusable platform operations that users can request.
 
-## Service Catalog
-
-### Responsibility
-
-The Service Catalog defines the reusable services provided by PlatformAI.
-
-A service represents a user-facing platform operation or workflow.
-
-Examples:
-
-- Install Product
-- Provision Customer Environment
-- Provision Cluster
-- Troubleshoot Kubernetes
-- Request Database
-- Rotate Secret
-
-A Service Definition may describe:
+A Service Definition may include:
 
 - Service name
 - Description
 - Required inputs
-- Supported targets
-- Approval requirements
+- Supported resource types
 - Owning team
-- Applicable policies
-- Workflow reference
+- Required approvals
+- Policy references
+- Workflow definition
+- Composition rules
 
-### Services Are Reusable
+## Atomic Services
 
-Services should not be defined separately for every product.
-
-For example, PlatformAI should define:
-
-```text
-Install Product
-```
-
-rather than:
-
-```text
-Install Product A
-Install Product B
-Install Product C
-```
-
-The product becomes an input to the reusable service.
-
----
-
-## Product Catalog
-
-### Responsibility
-
-The Product Catalog defines the deployable products that PlatformAI can operate on.
-
-A product represents a business application or solution that may consist of several deployable components.
-
-A Product Definition may include:
-
-- Product metadata
-- Versions
-- Components
-- Helm charts
-- Configuration
-- Dependencies
-- Infrastructure requirements
-- Ownership
-- Deployment constraints
-
-For example:
-
-```text
-Product A
-├── Frontend
-├── API
-├── Workers
-├── Database dependencies
-└── Supporting services
-```
-
-### Product Bundles
-
-The Product Catalog may also support Product Bundles.
-
-A Product Bundle groups multiple products into a reusable solution definition.
-
-For example:
-
-```text
-Enterprise Suite
-├── Core Product
-├── Identity Product
-├── Analytics Product
-└── Observability Add-on
-```
-
-This enables higher-level services to operate on complete solutions without requiring users to select every component individually.
-
----
-
-## Service and Product Relationship
-
-Services and products do not have a one-to-one relationship.
-
-The relationship is intentionally reusable and may be many-to-many.
-
-A service may operate on:
-
-- No product
-- One product
-- Multiple products
-- A product bundle
-
-Likewise, the same product may be consumed by multiple services.
+Atomic services represent reusable platform operations with a focused responsibility.
 
 Examples:
 
 ```text
+Provision Environment
 Install Product
-    → Product A
-    → Product B
-    → Product C
+Enable Product Add-on
+Disable Product Add-on
+Configure Network Access
+Request Database
+Troubleshoot Kubernetes
 ```
 
-and:
+Atomic services remain independently reusable.
+
+## Composite Services
+
+Composite services represent higher-level business outcomes.
+
+They orchestrate multiple reusable services so users do not need to understand the underlying engineering workflow.
+
+Example:
 
 ```text
-Provision Customer Environment
-    → Product A
-    → Product B
-    → Observability Add-on
+Onboard Customer
+        ↓
+Validate Customer
+        ↓
+Validate Contract / Entitlements
+        ↓
+Provision Environment
+        ↓
+Install Product(s)
+        ↓
+Enable Entitled Add-ons
+        ↓
+Configure Network Access
+        ↓
+Validate Environment
+        ↓
+Customer Ready
 ```
 
-This separation allows PlatformAI to standardize workflows while keeping product definitions reusable.
+> **Expose business outcomes to business-facing personas; expose reusable engineering primitives to engineering personas.**
+
+# Product Domain
+
+## Responsibility
+
+The Product Domain describes what can be deployed and how product instances evolve over time.
+
+The Product Domain contains:
+
+- Product Definitions
+- Product Bundles
+- Product Add-on Definitions
+- Product Instances
+
+## Product Definitions
+
+A Product Definition describes a deployable business application or SaaS product.
+
+It may include:
+
+- Product metadata
+- Supported versions
+- Components
+- Helm charts
+- Dependencies
+- Required configuration
+- Infrastructure requirements
+- Ownership
+- Deployment constraints
+
+## Product Bundles
+
+A Product Bundle groups multiple products into a reusable solution definition.
+
+A service may operate on one product, multiple products, or a product bundle.
+
+## Product Add-on Definitions
+
+An Add-on is an optional capability tied to a product.
+
+An Add-on Definition may describe:
+
+- Compatible product versions
+- Required feature flags
+- Git configuration changes
+- Additional infrastructure
+- Secrets or configuration
+- Restart or rollout requirements
+- Validation steps
+- Dependencies
+- Required entitlement
+
+The user requests the capability. PlatformAI owns the implementation steps required to enable it.
+
+## Product Instances
+
+A Product Definition describes what a product is.
+
+A Product Instance represents an installed instance of that product in a specific environment.
+
+Example:
+
+```text
+Product Instance
+
+Customer: ABC
+Environment: Production
+Product: Product A
+Version: 4.2
+
+Enabled Add-ons:
+✓ Advanced Reporting
+✓ External Integration
+✗ Analytics Export
+```
+
+Add-on lifecycle operations act on Product Instances.
+
+# Environment Domain
+
+## Responsibility
+
+The Environment Domain defines reusable standards for where products run and how environments are operated.
+
+The Environment Domain contains:
+
+- Environment Types
+- Environment Profiles
+- Environment Flavours
+- Environment Instances
+
+These concepts are intentionally separated so they can be composed and reused across services and products.
+
+## Environment Types
+
+Environment Type answers:
+
+> **What is this environment for?**
+
+Example:
+
+```text
+Customer
+├── Test
+└── Production
+
+Internal
+├── Development
+├── Test
+├── Staging
+└── Sandbox
+```
+
+Environment Types may define lifecycle expectations, governance level, approvals, access rules, availability, backup, data handling, allowed products, and observability requirements.
+
+## Environment Profiles
+
+Environment Profile answers:
+
+> **How much infrastructure does this environment require?**
+
+Examples:
+
+```text
+Small
+Medium
+Large
+Custom
+```
+
+Profiles are defined and governed by Platform Engineering.
+
+Consumers select approved profiles through the Service Marketplace.
+
+The same profile may resolve differently depending on Environment Flavour.
+
+Custom profiles represent an exception path and may require policy validation and approval.
+
+## Environment Flavours
+
+Environment Flavour answers:
+
+> **Where and how is this environment hosted?**
+
+Examples:
+
+```text
+Cloud
+└── GCP
+
+On-Prem
+└── Customer-provided infrastructure
+```
+
+Environment Flavour may influence provisioning workflow, networking, supported infrastructure, cluster bootstrap, security controls, and prerequisites.
+
+## Environment Instances
+
+An Environment Instance represents a provisioned realization of:
+
+```text
+Environment Type
++
+Environment Profile
++
+Environment Flavour
++
+Owner / Customer
++
+Configuration
+```
+
+Environment Instances can host one or many Product Instances.
+
+# Service, Product, and Environment Relationships
+
+The three domains are intentionally independent.
+
+Service Domain answers:
+
+> **What can the platform do?**
+
+Product Domain answers:
+
+> **What can be deployed or changed?**
+
+Environment Domain answers:
+
+> **Where and under what operating characteristics does it run?**
 
 > **Standardize the workflow; parameterize what it operates on.**
 
----
+# Customer Entitlement
 
-## Service Orchestration Domain
+## Responsibility
 
-### Responsibility
+Customer entitlement answers:
+
+> **Is this customer contractually allowed to use this product or add-on?**
+
+This is distinct from user authorization.
+
+Authorization asks:
+
+> Can this user perform this action?
+
+Entitlement asks:
+
+> Is this customer allowed to receive this capability?
+
+Example:
+
+```text
+Request: Enable Add-on X
+        ↓
+Authorization
+Can this user request add-ons?
+        ↓
+Entitlement
+Has this customer purchased Add-on X?
+        ↓
+Compatibility
+Does this product version support Add-on X?
+        ↓
+Lifecycle
+What changes are required?
+```
+
+## Current Architectural Status
+
+Customer Entitlement is recognized as an architectural concern in v0.2.
+
+It is not yet promoted to a full independent bounded context.
+
+# Service Orchestration Domain
+
+## Responsibility
 
 The Service Orchestrator coordinates the execution of requested platform services.
 
-It receives an authorized service request and determines which platform engines and external systems are required to fulfill it.
+It may coordinate:
 
-A typical request may contain:
+- Atomic services
+- Composite services
+- Authorization checks
+- Policy evaluation
+- Entitlement validation
+- Workflow execution
+- Product lifecycle operations
+- Environment lifecycle operations
+- Infrastructure automation
+- GitOps changes
+- Validation
+- Observability
+- Audit recording
 
-- Requested service
-- User identity
-- Authorized capabilities
-- Selected product or products
-- Target environment
-- Configuration
-- Approval state
+## Boundary
 
-### Example
+The Service Orchestrator coordinates.
 
-A request to provision a customer environment may coordinate:
+It does not reimplement Terraform, Kubernetes, GitOps, identity, policy, or observability systems.
 
-1. Authorization validation
-2. Policy evaluation
-3. Infrastructure provisioning
-4. Product lifecycle operations
-5. GitOps changes
-6. Deployment validation
-7. Observability
-8. Audit recording
-
-### Boundary
-
-The Service Orchestrator coordinates execution.
-
-It should not reimplement Terraform, GitOps, Kubernetes, identity, or observability functionality.
-
----
-
-## Platform Engines
+# Platform Engines
 
 Platform Engines are reusable internal capabilities used by one or more services.
 
 Users do not interact with engines directly.
 
-Services compose engines to fulfill user requests.
+## Workflow Engine
 
-### Workflow Engine
+Coordinates multi-step workflows, state transitions, retries, approvals, and compensation.
 
-Coordinates multi-step workflows, approvals, retries, and state transitions.
+## Product Lifecycle Engine
 
-### Product Lifecycle Engine
+Manages:
 
-Manages product lifecycle operations such as:
+- Install Product
+- Upgrade Product
+- Rollback Product
+- Remove Product
+- Enable Add-on
+- Disable Add-on
+- Upgrade Add-on
+- Validate Product Instance
 
-- Install
-- Upgrade
-- Rollback
+## Environment Lifecycle Capability
+
+Coordinates:
+
+- Provision
+- Validate
+- Update
+- Resize
 - Decommission
-- Validation
 
-### AI Reasoning Engine
+The exact implementation boundary between this capability and the general Workflow Engine remains open for future design.
 
-Provides AI-assisted reasoning, recommendations, investigation, and agent behavior.
+## AI Reasoning Engine
 
-### Knowledge Engine
+Provides investigation, reasoning, recommendations, and agent behavior.
 
-Provides retrieval of platform knowledge such as:
+## Knowledge Engine
 
-- Documentation
-- Runbooks
-- Architecture Decision Records
-- Previous incidents
-- Product documentation
+Provides retrieval of platform knowledge such as documentation, runbooks, ADRs, product documentation, and previous incidents.
 
-RAG may be used as an implementation technique for this domain.
+RAG may be used as an implementation technique.
 
-### Policy Engine
+## Policy Engine
 
-Evaluates organizational and platform policies before actions are performed.
+Evaluates platform policies, guardrails, approval requirements, environment constraints, and security requirements.
 
-### Observability Engine
+## Observability Engine
 
-Provides visibility into PlatformAI workflows and platform operations through:
+Provides logs, metrics, traces, audit information, and workflow evidence.
 
-- Logs
-- Metrics
-- Traces
-- Audit information
-
-### Authorization Engine
-
-Evaluates permissions and resource access.
-
-Although authorization participates in service execution, it remains a distinct security domain and is invoked whenever protected capabilities are accessed.
-
----
-
-## Automation and Execution Layer
+# Automation and Execution Layer
 
 PlatformAI does not replace existing engineering tools.
 
-Platform engines and orchestration workflows use existing systems to execute changes.
+Platform services and engines use existing systems to execute changes.
 
 Examples include:
 
-- Terraform for infrastructure provisioning
-- FluxCD or Fleet for GitOps reconciliation
-- Helm for application packaging
-- Kubernetes APIs for runtime operations
-- GitHub for repositories, pull requests, and CI/CD workflows
-- Cloud APIs for cloud infrastructure
-- Secret management systems for credentials and secrets
-- OpenTelemetry-compatible systems for telemetry
-- MCP servers or adapters for standardized AI tool access
+- Terraform
+- FluxCD or Fleet
+- Helm
+- Kubernetes APIs
+- GitHub
+- Cloud APIs
+- Automation scripts
+- Secret management systems
+- OpenTelemetry-compatible systems
+- MCP servers or adapters
 
-The exact technologies may evolve without changing the responsibility of the domains above.
+# High-Level Lifecycle Model
 
----
-
-## High-Level Request Flow
-
-A typical PlatformAI interaction follows this flow:
+PlatformAI v0.2 introduces three important lifecycle levels:
 
 ```text
-User
-  ↓
-Enterprise Identity Provider
-  ↓
-Authorization
-  ↓
-Service Marketplace
-  ↓
-Service Catalog
-  ↓
-Selected Product(s) / Product Bundle
-  ↓
-Service Orchestrator
-  ↓
-Platform Engines
-  ↓
-Existing Engineering Tools
-  ↓
-Infrastructure / Runtime
+Environment Definition
+        │
+        │ Provision Environment
+        ▼
+Environment Instance
+        │
+        │ Install Product
+        ▼
+Product Instance
+        │
+        │ Enable Add-on
+        ▼
+Product Instance
+with Add-on Enabled
 ```
 
-The result and telemetry flow back through the platform so the user can observe the outcome of the request.
+These operations remain independently reusable even when composed into higher-level services.
 
----
-
-## Example: Provision Customer Environment
+# Example: Customer Onboarding
 
 A Customer Success user requests:
 
 ```text
-Provision Customer Environment
-```
-
-with:
-
-```text
-Customer: Example Corp
-Environment: Production
-Products:
-- Core Product
-- Analytics Product
-Infrastructure: GCP
-Region: Montreal
+Onboard Customer
 ```
 
 PlatformAI:
 
-1. Authenticates the user through the enterprise identity provider.
-2. Evaluates whether the user can request the service.
-3. Validates the requested products and target environment.
-4. Determines whether approval is required.
-5. Invokes the Service Orchestrator.
-6. Coordinates infrastructure provisioning through existing automation.
-7. Invokes the Product Lifecycle Engine for selected products.
-8. Produces GitOps desired state.
-9. Allows the existing GitOps system to reconcile the environment.
-10. Validates deployment health.
-11. Emits logs, metrics, traces, and audit events.
-12. Reports the provisioning result to the requester.
+1. Authenticates the user.
+2. Evaluates user authorization.
+3. Validates customer information.
+4. Validates product and add-on entitlements.
+5. Resolves Environment Type, Profile, and Flavour.
+6. Provisions the Environment Instance.
+7. Installs requested products.
+8. Creates Product Instances.
+9. Enables entitled add-ons where requested.
+10. Configures network access.
+11. Produces desired state for GitOps.
+12. Allows existing systems to reconcile the environment.
+13. Validates environment and product health.
+14. Emits telemetry and audit events.
+15. Reports customer readiness.
 
-The user consumes a single platform service while PlatformAI coordinates several underlying systems.
+Customer Success consumes a business outcome while PlatformAI orchestrates reusable engineering services.
 
----
-
-## Architectural Boundaries
-
-PlatformAI intentionally maintains the following separations:
+# Architectural Boundaries
 
 ```text
 Persona ≠ Role
 Identity ≠ Authorization
+Authorization ≠ Entitlement
+Product Definition ≠ Product Instance
+Environment Definition ≠ Environment Instance
+Environment Type ≠ Environment Profile
+Environment Profile ≠ Environment Flavour
 Product ≠ Service
+Atomic Service ≠ Composite Service
 Catalog ≠ Marketplace
-Authorization ≠ User Interface
 Service ≠ Engine
 Orchestration ≠ Execution
 AI Reasoning ≠ Infrastructure Access
 ```
 
-These boundaries reduce coupling and allow individual platform domains to evolve independently.
+# Evolution from v0.1
 
----
+Domain Architecture v0.1 established:
 
-## Relationship to Engineering Principles
+- Identity
+- Authorization
+- Service Marketplace
+- Service Catalog
+- Product Catalog
+- Service Orchestration
+- Platform Engines
+- Execution Layer
 
-This domain architecture reflects the existing PlatformAI engineering principles.
+Domain Architecture v0.2 adds and refines:
 
-### Platform as a Product
+- Environment Domain
+- Environment Types
+- Environment Profiles
+- Environment Flavours
+- Environment Instances
+- Product Instances
+- Product Add-on Definitions
+- Customer Entitlement concern
+- Atomic Services
+- Composite Services
+- Generalized `Provision Environment`
+- Business-outcome-oriented service composition
 
-Users consume platform services rather than infrastructure primitives.
+This evolution emerged from testing the architecture against real operational workflows.
 
-### People Before Technology
+# Open Architecture Questions
 
-Services are derived from persona needs and operational problems.
+- Should Customer Entitlement become an independent domain?
+- Should Environment lifecycle have a dedicated engine?
+- Where should Environment Profile schemas and versions be stored?
+- How should Product and Add-on compatibility be modeled?
+- How should composite service definitions reference atomic services?
+- How should service state and long-running workflow state be persisted?
+- How should multi-tenancy boundaries be modeled?
+- How should approval policies vary by Environment Type and resource risk?
+- How should service definitions be versioned?
 
-### Build on Existing Tooling
+# Guiding Question
 
-Execution remains delegated to established engineering systems.
+When evolving the domain model, ask:
 
-### AI Augments Engineers
-
-AI assists workflows without replacing engineering accountability.
-
-### Evidence Before Action
-
-Operational workflows gather evidence before recommendations or changes.
-
-### Human Approval for Risky Operations
-
-High-impact operations can require explicit approval.
-
-### Secure by Design
-
-Identity, authorization, policy, and auditability are first-class domains.
-
-### Observable by Design
-
-Platform workflows produce telemetry and audit information.
-
-### Incremental Evolution
-
-The architecture can evolve domain by domain.
-
-### Separation of Concerns
-
-Each domain has a clear responsibility and boundary.
-
----
-
-## Evolution
-
-This document represents the initial PlatformAI domain architecture.
-
-Future revisions may introduce or refine:
-
-- Resource-scoped authorization
-- Attribute- or policy-based access control
-- Service and Product Definition schemas
-- Product Bundles
-- Workflow definitions
-- Approval models
-- Platform APIs
-- Event-driven communication
-- Multi-cluster and multi-cloud abstractions
-- Agent orchestration
-- MCP integration
-- RAG architecture
-- Platform tenancy boundaries
-
-Significant architectural changes should be captured through Architecture Decision Records.
-
----
-
-## Guiding Question
-
-When adding or changing a domain, ask:
-
-> **Does this responsibility belong here, and can this domain evolve without unnecessarily coupling itself to the others?**
+> **Does this abstraction represent an independently owned, reusable responsibility, or are we creating a new domain where composition would be simpler?**
