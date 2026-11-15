@@ -1,0 +1,323 @@
+# Bounded Context Analysis
+
+**Version:** v0.1  
+**Status:** Proposed — Under Evaluation  
+**Project:** PlatformAI  
+**Related Issue:** [#18 — Consolidate Domain Architecture v0.3](https://github.com/Blanchekahou/platform-ai/issues/18)
+
+---
+
+## 1. Purpose
+
+This document captures the initial Bounded Context analysis for PlatformAI using strategic Domain-Driven Design (DDD) principles.
+
+Its objectives are to:
+
+- Identify candidate Bounded Contexts based on business responsibilities and domain language.
+- Clarify ownership of business decisions and domain rules.
+- Evaluate boundaries between Product Definition and Product Instance lifecycle management.
+- Identify architectural trade-offs and unresolved questions.
+- Provide input for future Context Mapping and Domain Architecture v0.3.
+
+This document records architectural hypotheses rather than finalized implementation decisions.
+
+It complements the existing [Domain Architecture](domain-architecture.md) and [Product Installation Domain Discovery](../domain-discovery/product-installation.md).
+
+## 2. Strategic DDD Foundations
+
+### 2.1 Subdomain vs. Bounded Context
+
+A **Subdomain** represents a distinct area of the business problem space.
+
+A **Bounded Context** defines an explicit boundary within which a domain model and its ubiquitous language remain consistent.
+
+A Subdomain does not necessarily map one-to-one to a Bounded Context.
+
+Likewise, a Bounded Context does not necessarily correspond to a microservice, database, deployment unit, or organizational team.
+
+### 2.2 Boundary Design Principles
+
+Candidate boundaries are evaluated using the following principles:
+
+| Principle | Architectural Consideration |
+|---|---|
+| Language consistency | Domain concepts have clear, context-specific meanings. |
+| Business rule ownership | Each decision has an explicitly identified authority. |
+| Domain cohesion | Closely related responsibilities remain together. |
+| Independent evolution | Rules that change for different reasons may justify separate models. |
+| Explicit integration | Dependencies between models are expressed through defined contracts. |
+| Proportional complexity | Boundary benefits must justify coordination and integration costs. |
+
+Different lifecycle states or separate domain entities do not, by themselves, require separate Bounded Contexts.
+
+## 3. PlatformAI Domain Context
+
+PlatformAI provides secure, governed, and intelligent self-service capabilities for platform operations.
+
+Its domain includes product definitions, product instances, environments, authorization, service requests, orchestration, and operational validation.
+
+The existing Domain Architecture identifies several domain responsibilities and platform engines.
+
+These architectural responsibilities are not automatically equivalent to DDD Bounded Contexts.
+
+The purpose of this analysis is to evaluate possible model boundaries without prematurely defining software services or deployment topology.
+
+## 4. Candidate Bounded Contexts
+
+The following candidates are proposed for further analysis.
+
+| Candidate Context | Primary Responsibility | Candidate Domain Authority |
+|---|---|---|
+| Product Catalog | Manage product definitions, published versions, and declared requirements. | Product definition and publication rules |
+| Product Lifecycle | Manage product instances and their lifecycle transitions. | Product instance lifecycle rules |
+| Environment | Represent environment definitions, instances, capabilities, and constraints. | Environment-specific rules and state |
+| Authorization | Evaluate whether an actor may perform a requested action. | Access and permission decisions |
+| Service Fulfillment | Manage the business lifecycle of accepted service requests. | Service request processing rules |
+
+These candidates are not a complete or final Context Map.
+
+Additional analysis is required for Customer Entitlement, Service Domain, compatibility evaluation, operational readiness, and other responsibilities identified in the existing architecture.
+
+The proposed Service Fulfillment Context must not be confused with the Workflow Engine.
+
+Service Fulfillment represents a candidate business model boundary. The Workflow Engine is an execution and coordination mechanism that may support it.
+
+## 5. Product Catalog vs. Product Lifecycle
+
+### 5.1 Domain Concepts
+
+**Product Definition**
+
+Represents a product offering and its declared characteristics, including supported versions and installation requirements.
+
+Candidate responsibilities include:
+
+- Managing product definitions.
+- Maintaining product version information.
+- Defining installation requirements.
+- Publishing or deprecating product definitions.
+- Exposing information required by product installation processes.
+
+**Product Instance**
+
+Represents a product installed or managed within a particular environment.
+
+Candidate responsibilities include:
+
+- Tracking product instance identity and lifecycle.
+- Managing permitted lifecycle transitions.
+- Representing installation outcomes separately from operational readiness.
+- Applying product instance lifecycle rules.
+- Maintaining or referencing operational readiness results.
+
+The exact ownership of readiness evaluation criteria remains under investigation.
+
+### 5.2 Option A — Single Product Bounded Context
+
+Under this option, Product Definition and Product Instance belong to a single Product Context.
+
+**Potential advantages**
+
+- Direct access to closely related product concepts.
+- Fewer explicit cross-context integration contracts.
+- Simpler coordination where rules are strongly coupled.
+
+**Potential disadvantages**
+
+- Publication and lifecycle responsibilities may become tightly coupled.
+- Independent business rule evolution may increase model complexity.
+- Different authorities may compete within a shared model.
+
+This option remains viable if further domain discovery reveals strong cohesion between the responsibilities.
+
+### 5.3 Option B — Separate Bounded Contexts
+
+Under this option, Product Catalog and Product Lifecycle maintain distinct domain models.
+
+**Potential advantages**
+
+- Clearer separation between product definitions and deployed instances.
+- Independent evolution of publication and lifecycle rules.
+- Explicit business ownership.
+- Product Lifecycle consumes only the definition information it requires.
+
+**Potential disadvantages**
+
+- Cross-context contracts must be maintained.
+- Changes to product definitions require an explicit propagation or versioning strategy.
+- Integration introduces coordination and consistency concerns.
+
+### 5.4 Proposed Direction
+
+**Proposal BC-01: Evaluate Product Catalog and Product Lifecycle as separate Bounded Contexts.**
+
+The current analysis favors separation based on the following scenario assumptions:
+
+1. Product definitions and product instances are managed by different business responsibilities.
+2. Publication rules and lifecycle rules evolve independently.
+3. Product Definition and Product Instance have distinct lifecycle models.
+4. Product Lifecycle requires only a subset of Product Catalog information.
+5. Explicit integration can preserve the autonomy of both models.
+
+This is a provisional recommendation, not an approved architectural decision.
+
+Actual ownership, change patterns, and integration needs must be validated before the boundary is finalized.
+
+## 6. Conceptual Boundary Diagram
+
+```mermaid
+flowchart LR
+    subgraph PC["Product Catalog — Candidate Bounded Context"]
+        PD["Product Definition"]
+        PR["Versions and Requirements"]
+        PD --- PR
+    end
+
+    subgraph PL["Product Lifecycle — Candidate Bounded Context"]
+        PI["Product Instance"]
+        LC["Lifecycle and Readiness State"]
+        PI --- LC
+    end
+
+    PC -->|"Explicit definition contract"| PL
+```
+
+The diagram represents candidate domain model boundaries, not independent microservices or infrastructure components.
+
+The integration relationship will be analyzed further during Context Mapping.
+
+## 7. Business Decision Ownership
+
+### 7.1 Authorization
+
+Authorization evaluates whether an actor has permission to perform a requested action.
+
+It must not be confused with product-environment compatibility.
+
+A user may be authorized to request an installation even when the selected product is incompatible with the target environment.
+
+### 7.2 Compatibility
+
+Product requirements and environment capabilities provide information necessary for compatibility evaluation.
+
+For example:
+
+- Product A requires PostgreSQL version 15 or later.
+- The target environment provides PostgreSQL version 14.
+- The installation is therefore incompatible under this requirement.
+
+The Workflow Engine may coordinate the evaluation, but should not become the default owner of product-specific or environment-specific compatibility rules.
+
+**Open ownership decision:** determine which domain authority evaluates the combined compatibility rule and exposes the result.
+
+### 7.3 Service Workflow Coordination
+
+The Workflow Engine may coordinate:
+
+- Prerequisite verification.
+- Authorized remediation.
+- Suspension while waiting for human intervention.
+- Resumption and revalidation.
+- Execution steps and workflow outcomes.
+
+Coordination does not imply ownership of all business decisions.
+
+For example, the Workflow Engine may receive a compatibility result and decide which workflow transition to execute without implementing the underlying compatibility rules itself.
+
+### 7.4 Installation vs. Readiness
+
+Technical installation success and product instance operational readiness represent different facts.
+
+An installation operation may succeed while the resulting Product Instance remains NotReady.
+
+Readiness should reflect mandatory operational criteria, not merely successful deployment execution.
+
+The ownership and evolution of readiness criteria require additional analysis.
+
+## 8. Integration Principles
+
+The following principles guide future relationships between candidate contexts:
+
+1. **Explicit contracts:** context interactions should use clearly defined interfaces or messages.
+2. **Model autonomy:** a consuming context should not depend unnecessarily on another context's internal model.
+3. **Clear authority:** each business decision should have an identified owner.
+4. **Minimal information exchange:** contexts should exchange information required for their responsibilities rather than share entire domain models by default.
+5. **Version awareness:** changes to published product definitions must not silently invalidate assumptions about existing instances.
+6. **Separation of coordination and decision-making:** workflow infrastructure should orchestrate domain responsibilities rather than absorb them.
+
+The specific integration patterns will be determined through Context Mapping.
+
+## 9. Architectural Trade-offs
+
+| Decision Area | Potential Benefit | Potential Cost or Risk |
+|---|---|---|
+| Separate Product Catalog and Lifecycle | Independent models and clearer ownership | Integration contracts and version coordination |
+| Keep business rules outside Workflow Engine | Reduced concentration of domain logic | More explicit collaboration between components |
+| Context-specific representations | Stronger model coherence | Possible duplication of selected information |
+| Explicit compatibility ownership | Consistent business decisions | Requires cross-domain rule design |
+| Separate installation and readiness states | More accurate operational semantics | Additional lifecycle and recovery considerations |
+
+These trade-offs must be evaluated against actual product requirements and operational constraints.
+
+## 10. Open Questions
+
+The following questions remain unresolved:
+
+1. Are Product Catalog and Product Lifecycle distinct subdomains, or separate models within a broader Product Management subdomain?
+2. Which business authority owns the combined product-environment compatibility decision?
+3. Which context defines and evaluates mandatory operational readiness criteria?
+4. How should Product Lifecycle react when a published Product Definition changes?
+5. Should an existing Product Instance retain a reference to an immutable version of its Product Definition?
+6. How are compatibility results and readiness decisions communicated across boundaries?
+7. Which business responsibilities belong to Service Fulfillment rather than workflow infrastructure?
+8. Where should Customer Entitlement be represented in the future Context Map?
+9. Which existing domain responsibilities justify separate Bounded Contexts, and which should remain within shared model boundaries?
+10. What integration complexity would be introduced by the proposed boundaries?
+
+## 11. Relationship to Existing Architecture
+
+This document does not replace Domain Architecture v0.2.
+
+It provides additional DDD analysis that may inform Domain Architecture v0.3.
+
+In particular:
+
+- Existing architectural domains must be evaluated before being designated as Bounded Contexts.
+- Product Catalog and Product Lifecycle are proposed model boundaries, not finalized replacements for the existing Product Domain.
+- Service Fulfillment is a candidate business responsibility and does not replace the existing Workflow Engine.
+- Authorization, compatibility, entitlement, and readiness must remain distinguishable business concerns.
+- Implementation engines and infrastructure components must not automatically determine domain boundaries.
+
+## 12. Next Steps
+
+The next stage is **Context Mapping**, which will examine relationships between candidate Bounded Contexts.
+
+Topics include:
+
+- Upstream and Downstream relationships.
+- Customer–Supplier and Conformist relationships.
+- Anti-Corruption Layers.
+- Shared Kernel and Partnership.
+- Published Language and Open Host Service.
+- Integration contracts and change propagation.
+
+Following Context Mapping, the findings can be reviewed for inclusion in Domain Architecture v0.3 and, where appropriate, recorded as Architecture Decision Records.
+
+## 13. Out of Scope
+
+This document does not define:
+
+- Final Bounded Context boundaries.
+- Final Subdomain classification.
+- Aggregate design or persistence models.
+- API or event payload schemas.
+- Microservice boundaries or deployment topology.
+- Kubernetes, Helm, Terraform, or GitOps implementation details.
+- Final compatibility and readiness algorithms.
+- Final Context Mapping relationships.
+
+---
+
+**Status:** Proposed — Under Evaluation  
+**Next Review:** Context Mapping analysis  
+**Related Work:** Contributes to GitHub issue #18.
