@@ -120,7 +120,7 @@ The sequence is conceptual. It does not prescribe synchronous APIs, distributed 
 
 ### Readiness versus lifecycle
 
-A `NOT_READY` evaluation is an assessment, **not** automatically a lifecycle command. Applicability may depend on instance generation, evidence freshness, concurrency, and permitted transitions. `UPGRADING` and `NOT_READY` may describe different dimensions (lifecycle versus operational readiness); this modeling hypothesis remains open for the Aggregates course.
+A `NOT_READY` evaluation is an assessment, **not** automatically a lifecycle command. Applicability may depend on instance generation, evidence freshness, concurrency, and permitted transitions. `UPGRADING` and `NOT_READY` may describe different dimensions (lifecycle versus operational readiness); this modeling hypothesis remains open for subsequent domain-model analysis.
 
 ### Policy engine versus policy ownership
 
@@ -165,4 +165,4 @@ A shared engine such as OPA may execute policies owned by different domains. Cen
 
 This document contributes to the ongoing consolidation of Domain Architecture v0.3 (issue #18), but does **not** itself finalize that architecture or close the issue.
 
-**Next learning step:** Course 6 — Entities, Value Objects & Aggregates, including Product Instance invariants and consistency boundaries.
+**Next architecture review focus:** Refine Product Instance invariants, aggregate consistency boundaries, and the lifecycle/readiness state model.
